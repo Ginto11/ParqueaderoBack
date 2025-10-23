@@ -43,8 +43,10 @@ builder.Services.AddCors(opciones =>
 {
     opciones.AddPolicy("DesarrolloAngular", app =>
     {
-        app.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod();
+        app.WithOrigins("http://localhost:4200", "https://parqueadero-front.vercel.app").AllowAnyHeader().AllowAnyMethod();
     });
+
+
 });
 
 builder.Services.AddControllers();
