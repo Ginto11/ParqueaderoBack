@@ -6,6 +6,6 @@
 
         public int CupoId { get; set; }
 
-        public DateTime FechaIngreso { get; set; }
+        public DateTime FechaIngresoEstipulada { get; set; }
     }
 }

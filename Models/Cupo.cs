@@ -6,6 +6,7 @@
 
         public bool Estado { get; set; } = false;
 
+        public required string EstadoDescripcion { get; set; }
 
     }
 }

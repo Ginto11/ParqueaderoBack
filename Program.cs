@@ -39,6 +39,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ReservaService>();
 builder.Services.AddScoped<VehiculoService>();
 builder.Services.AddScoped<SoporteService>();
+builder.Services.AddScoped<TransaccionService>();
 builder.Services.AddCors(opciones =>
 {
     opciones.AddPolicy("DesarrolloAngular", app =>

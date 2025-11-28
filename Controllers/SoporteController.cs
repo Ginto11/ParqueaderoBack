@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Parqueadero_Back.Dtos;
 using Parqueadero_Back.Models;
 using Parqueadero_Back.Services;
 
@@ -30,12 +31,19 @@ namespace Parqueadero_Back.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post(Soporte soporte)
+        public async Task<ActionResult> Post(PostSoporte soporte)
         {
             try
             {
 
-                await soporteService.Insertar(soporte);
+                var soporteCreado = new Soporte
+                {
+                    Asunto = soporte.Asunto,
+                    Descripcion = soporte.Descripcion,
+                    UsuarioId = soporte.UsuarioId
+                };
+
+                await soporteService.Insertar(soporteCreado);
 
                 return RespuestasService.Created();
 

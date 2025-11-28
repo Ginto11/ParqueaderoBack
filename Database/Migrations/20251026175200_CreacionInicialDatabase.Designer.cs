@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Parqueadero_Back.Database;
 
@@ -11,9 +12,11 @@ using Parqueadero_Back.Database;
 namespace Parqueadero_Back.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251026175200_CreacionInicialDatabase")]
+    partial class CreacionInicialDatabase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -164,40 +167,6 @@ namespace Parqueadero_Back.Database.Migrations
                             Id = 20,
                             Estado = true,
                             EstadoDescripcion = "Ocupado"
-                        });
-                });
-
-            modelBuilder.Entity("Parqueadero_Back.Models.MetodoPago", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MetodoPago");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nombre = "Efectivo"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nombre = "Tarjeta"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Nombre = "Transferencia"
                         });
                 });
 
@@ -480,74 +449,6 @@ namespace Parqueadero_Back.Database.Migrations
                     b.HasIndex("UsuarioId");
 
                     b.ToTable("Soporte");
-                });
-
-            modelBuilder.Entity("Parqueadero_Back.Models.TipoTransaccion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TipoTransaccion");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nombre = "Ingreso"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nombre = "Egreso"
-                        });
-                });
-
-            modelBuilder.Entity("Parqueadero_Back.Models.Transaccion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("FechaHora")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MetodoPagoId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Monto")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ReservaId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TipoTransaccionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MetodoPagoId");
-
-                    b.HasIndex("ReservaId");
-
-                    b.HasIndex("TipoTransaccionId");
-
-                    b.ToTable("Transaccion");
                 });
 
             modelBuilder.Entity("Parqueadero_Back.Models.Usuario", b =>
@@ -864,33 +765,6 @@ namespace Parqueadero_Back.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Usuario");
-                });
-
-            modelBuilder.Entity("Parqueadero_Back.Models.Transaccion", b =>
-                {
-                    b.HasOne("Parqueadero_Back.Models.MetodoPago", "MetodoPago")
-                        .WithMany()
-                        .HasForeignKey("MetodoPagoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Parqueadero_Back.Models.Reserva", "Reserva")
-                        .WithMany()
-                        .HasForeignKey("ReservaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Parqueadero_Back.Models.TipoTransaccion", "TipoTransaccion")
-                        .WithMany()
-                        .HasForeignKey("TipoTransaccionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MetodoPago");
-
-                    b.Navigation("Reserva");
-
-                    b.Navigation("TipoTransaccion");
                 });
 
             modelBuilder.Entity("Parqueadero_Back.Models.Usuario", b =>

@@ -86,13 +86,15 @@ namespace Parqueadero_Back.Controllers
                     return RespuestasService.NotFound($"Cupo con ID = {reservaDto.CupoId}, no encontrado.");
 
                 cupo.Estado = true;
+                cupo.EstadoDescripcion = "Reservado";
 
                 var reserva = new Reserva
                 {
                     VehiculoId = reservaDto.VehiculoId,
                     CupoId = reservaDto.CupoId,
                     FechaReserva = DateTime.Now,
-                    FechaIngreso = reservaDto.FechaIngreso,
+                    FechaIngresoEstipulada = reservaDto.FechaIngresoEstipulada,
+                    EstadoDescripcion = "Activa",
                     Estado = true
                 };
 
@@ -125,16 +127,90 @@ namespace Parqueadero_Back.Controllers
 
 
                 cupo.Estado = false;
+                cupo.EstadoDescripcion = "Disponible";
 
                 reserva.Estado = false;
                 reserva.Costo = 0.00;
                 reserva.Duracion = 0;
+                reserva.EstadoDescripcion = "Cancelada";
 
                 await reservaService.Actualizar(reserva);
                 await cupoService.Actualizar(cupo);
 
                 return RespuestasService.NoContent();
 
+            }catch(Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("activas")]
+        public async Task<ActionResult> GetCantidadReservasActivas()
+        {
+            try
+            {
+
+                var reservasActivas = await reservaService.ObtenerTodasLasReservasActivas();
+
+                if (reservaService is null)
+                    return RespuestasService.NotFound("No hay reservas activas el dia de hooy.");
+
+                return RespuestasService.Ok(reservasActivas);
+
+            }catch(Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("ultimas-reservas")]
+        public async Task<ActionResult> GetUltimasReservas()
+        {
+            try
+            {
+
+                var ultimasReservas = await reservaService.ObtenerUltimasReservas();
+
+                if (reservaService is null)
+                    return RespuestasService.NotFound("No hay reservas activas el dia de hooy.");
+
+                return RespuestasService.Ok(ultimasReservas);
+
+            }
+            catch (Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("ingresar-vehiculo/{cupoId}")]
+        public async Task<ActionResult> IngresarReservaConCupoId(int cupoId)
+        {
+            try
+            {
+                var reserva = await reservaService.BuscarReservaPorCupoId(cupoId);
+
+                if (reserva is null)
+                    return RespuestasService.NotFound($"Reserva con CupoId = {cupoId}, no encontrada.");
+
+                var cupo = await cupoService.Buscar(cupoId);
+
+                if (cupo is null)
+                    return RespuestasService.NotFound($"Cupo con Id = {cupoId}, no encontrado.");
+
+                reserva.FechaIngresoReal = DateTime.Now;
+                cupo.EstadoDescripcion = "Ocupado";
+
+                await cupoService.Actualizar(cupo);
+                await reservaService.Actualizar(reserva);
+
+                return RespuestasService.Ok("Vehiculo ingresado correctamente");
+
+                
             }catch(Exception error)
             {
                 return RespuestasService.ServerError(error.Message);
