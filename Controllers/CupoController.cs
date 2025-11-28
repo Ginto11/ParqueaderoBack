@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Parqueadero_Back.Models;
 using Parqueadero_Back.Services;
 using Parqueadero_Back.Servicios;
@@ -9,10 +10,14 @@ namespace Parqueadero_Back.Controllers
     [ApiController]
     public class CupoController : ControllerBase
     {
-        private readonly CupoService _cupoService;
-        public CupoController(CupoService cupoService)
+        private readonly CupoService cupoService;
+        private readonly ReservaService reservaService;
+        private readonly TransaccionService transaccionService;
+        public CupoController(CupoService cupoService, ReservaService reservaService, TransaccionService transaccionService)
         {
-            this._cupoService = cupoService;
+            this.cupoService = cupoService;
+            this.transaccionService = transaccionService;
+            this.reservaService = reservaService;
         }
 
         [HttpPost]
@@ -20,7 +25,7 @@ namespace Parqueadero_Back.Controllers
         {
             try
             {
-                await _cupoService.Insertar(cupo);
+                await cupoService.Insertar(cupo);
 
                 return RespuestasService.Created();
 
@@ -36,7 +41,7 @@ namespace Parqueadero_Back.Controllers
         {
             try
             {
-                var cupo = await _cupoService.Buscar(id);
+                var cupo = await cupoService.Buscar(id);
 
                 if (cupo is null)
                     return RespuestasService.NotFound($"Cupo con ID = {id}, no encontrado.");
@@ -55,7 +60,7 @@ namespace Parqueadero_Back.Controllers
         {
             try
             {
-                var cupos = await _cupoService.ObtenerTodos();
+                var cupos = await cupoService.ObtenerTodos();
 
                 return Ok(cupos);
 
@@ -74,12 +79,12 @@ namespace Parqueadero_Back.Controllers
         {
             try
             {
-                var cupoEncontrado = await _cupoService.Buscar(id);
+                var cupoEncontrado = await cupoService.Buscar(id);
 
                 if (cupoEncontrado is null)
                     return RespuestasService.NotFound($"Cupo con ID = {id}, no encontrado.");
 
-                await _cupoService.Actualizar(cupoEncontrado);
+                await cupoService.Actualizar(cupoEncontrado);
 
                 return RespuestasService.NoContent();
 
@@ -96,7 +101,7 @@ namespace Parqueadero_Back.Controllers
         {
             try
             {
-                var cupos = await _cupoService.ObtenerCuposDisponibles();
+                var cupos = await cupoService.ObtenerCuposDisponibles();
 
                 return RespuestasService.Ok(cupos);
             }catch(Exception error)
@@ -104,19 +109,36 @@ namespace Parqueadero_Back.Controllers
                 return RespuestasService.ServerError(error.Message);
             }
         }
-        
+
+        [HttpGet]
+        [Route("ocupados")]
+        public async Task<ActionResult> GetCuposOcupados()
+        {
+            try
+            {
+                var cuposOcupados = await cupoService.ObtenerCuposOcupados();
+
+                return RespuestasService.Ok(cuposOcupados);
+
+            }catch(Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        }
+
+
         [HttpDelete]
         [Route("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
             try
             {
-                var cupo = await _cupoService.Buscar(id);
+                var cupo = await cupoService.Buscar(id);
 
                 if (cupo is null)
                     return RespuestasService.NotFound($"Cupo con ID = {id}, no encontrado.");
 
-                await _cupoService.Eliminar(cupo);
+                await cupoService.Eliminar(cupo);
 
                 return RespuestasService.NoContent();
 
@@ -125,5 +147,95 @@ namespace Parqueadero_Back.Controllers
                 return RespuestasService.ServerError(error.Message);
             }
         }
+
+        [HttpGet]
+        [Route("cantidad-vehiculos")]
+        public async Task<ActionResult> GetCantidadVehiculos()
+        {
+            try
+            {
+                var cantidadVehiculos = await cupoService.ObtenerVehiculosTotalesDelParqueadero();
+
+                return RespuestasService.Ok(cantidadVehiculos);
+
+            }
+            catch (Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("salida-vehiculo/{cupoId}")]
+        public async Task<ActionResult> SalidaVehiculo(int cupoId)
+        {
+            try
+            {
+                var reserva = await reservaService.BuscarReservaPorCupoId(cupoId);
+
+                if (reserva is null)
+                    return RespuestasService.NotFound($"Reserva con CupoId = {cupoId}, no encontrada.");
+
+                var cupo = await cupoService.Buscar(cupoId);
+
+                if (cupo is null)
+                    return RespuestasService.NotFound($"Cupo con Id = {cupoId}, no encontrado.");
+
+
+                var costoCalculado = ((DateTime.Now - reserva.FechaIngresoReal!).Value.TotalMinutes / 60) * 3500;
+
+                reserva.EstadoDescripcion = "Finalizada";
+                reserva.Duracion = ((DateTime.Now - reserva.FechaIngresoReal!).Value.TotalMinutes / 60);
+                reserva.FechaSalida = DateTime.Now;
+                reserva.Costo = costoCalculado; 
+
+
+                cupo.Estado = false;
+                cupo.EstadoDescripcion = "Disponible";
+
+                var transaccion = new Transaccion
+                {
+                    MetodoPagoId = 1, //EFECTIVO
+                    TipoTransaccionId = 1, //INGRESO
+                    Descripcion = $"Salida vehículo placa {reserva.Vehiculo!.Placa}",
+                    FechaHora = DateTime.Now,
+                    Monto = (decimal)costoCalculado,
+                    ReservaId = reserva.Id,
+                };
+
+                await cupoService.Actualizar(cupo);
+                await reservaService.Actualizar(reserva);
+                await transaccionService.Insertar(transaccion);
+
+
+                return RespuestasService.Ok("Salida exitosa");
+
+            }
+            catch (Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("vehiculo-placa/{placa}")]
+        public async Task<ActionResult> BuscarCupoPorPlacaVehiculo(string placa)
+        {
+            try
+            {
+                var cupo = await cupoService.BuscarCupoPorPlaca(placa);
+
+                if (cupo is null)
+                    return RespuestasService.NotFound($"Vehiculo con placa = {placa}, no encontrado.");
+
+                return RespuestasService.Ok(cupo);
+            }
+            catch (Exception error)
+            {
+                return RespuestasService.ServerError(error.Message);
+            }
+        } 
+
+        
     }
 }

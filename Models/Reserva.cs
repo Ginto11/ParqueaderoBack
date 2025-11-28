@@ -10,7 +10,9 @@
 
         public DateTime FechaReserva { get; set; }
         
-        public DateTime FechaIngreso { get; set; }
+        public DateTime FechaIngresoEstipulada { get; set; }
+
+        public DateTime? FechaIngresoReal { get; set; }
 
         public DateTime? FechaSalida { get; set; }
 
@@ -19,6 +21,8 @@
         public double? Duracion { get; set; }
 
         public bool Estado { get; set; }
+
+        public required string EstadoDescripcion { get; set; }
 
         public Vehiculo? Vehiculo { get; set; }
 

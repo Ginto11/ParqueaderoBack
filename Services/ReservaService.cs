@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Parqueadero_Back.Database;
+using Parqueadero_Back.Dtos;
 using Parqueadero_Back.Interfaces;
 using Parqueadero_Back.Models;
+using Parqueadero_Back.Servicios;
 
 namespace Parqueadero_Back.Services
 {
@@ -81,7 +83,6 @@ namespace Parqueadero_Back.Services
             try
             {
                 return await context.Reserva
-                    .Include(reserva => reserva.Cupo)
                     .Include(reserva => reserva.Vehiculo)
                     .Where(reserva => reserva.Vehiculo!.Usuario!.Id == id)
                     .OrderByDescending(reserva => reserva.Id)
@@ -98,7 +99,6 @@ namespace Parqueadero_Back.Services
             try
             {
                 return await context.Reserva
-                    .Include(reserva => reserva.Cupo)
                     .Include(reserva => reserva.Vehiculo)
                     .Where(reserva => reserva.Vehiculo!.Usuario!.Id == id)
                     .OrderByDescending(reserva => reserva.Id)
@@ -111,7 +111,7 @@ namespace Parqueadero_Back.Services
             }
         }
 
-        public async Task<IEnumerable<Reserva>> ObtenerReservasActivasPorUsuario(int id)
+        public async Task<IEnumerable<Reserva?>> ObtenerReservasActivasPorUsuario(int id)
         {
             try
             {
@@ -128,5 +128,60 @@ namespace Parqueadero_Back.Services
             }
         }
 
+
+        public async Task<IEnumerable<Reserva?>> ObtenerTodasLasReservasActivas()
+        {
+            try
+            {
+                return await context.Reserva
+                    .Where(reserva => reserva.EstadoDescripcion == "Activa")
+                    .ToListAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Object>> ObtenerUltimasReservas()
+        {
+            try
+            {
+                return await context.Reserva
+                    .Include(reserva => reserva.Vehiculo)
+                    .Include(reserva => reserva.Vehiculo!.Usuario)
+                    .Select(reserva => new {
+                        Id = reserva.Id,
+                        NombreUsuario = reserva.Vehiculo!.Usuario!.NombreCompleto,
+                        Placa = reserva.Vehiculo.Placa,
+                        FechaReserva = reserva.FechaReserva,
+                        EstadoDescripcion = reserva.EstadoDescripcion
+                    })
+                    .Take(7)
+                    .OrderByDescending(reserva => reserva.Id)
+                    .ToListAsync();
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<Reserva> BuscarReservaPorCupoId(int id)
+        {
+            try
+            {
+                return await context.Reserva
+                    .Include(reserva => reserva.Vehiculo)
+                    .FirstAsync(reserva => reserva.CupoId == id && reserva.EstadoDescripcion == "Activa")!;
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        
     }
 }
